@@ -13,8 +13,9 @@ const Auth0Strategy = require("passport-auth0");
 require("dotenv").config();
 
 const authRouter = require("./auth");
+const bodyParser = require('body-parser');
 const cors = require("cors");
-const db = require("./app/models");
+const db = require("./models");
 
 /**
  * App Variables
@@ -83,6 +84,7 @@ app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+app.engine('pug', require('pug').__express)
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 app.use(express.static(path.join(__dirname, "public")));
@@ -104,8 +106,43 @@ passport.deserializeUser((user, done) => {
 // Creating custom middleware with Express
 app.use((req, res, next) => {
     res.locals.isAuthenticated = req.isAuthenticated();
+    // console.log(req.isAuthenticated());
+    if (req.user) {
+        if(typeof(res._headers.authorization) === "undefined") {
+            const accessToken = jwt.sign(req.user._json, accessTokenSecret, {expiresIn: '20m'});
+            res.setHeader('Authorization', 'Bearer ' + accessToken);
+        }
+    }else if (!req.user){
+        try {
+            res.setHeader('Authorization', ' ');
+        }catch{}
+    }
     next();
 });
+
+const authenticateJWT = (req, res, next) => {
+    console.log("authenticating");
+    if (req.user) {
+        const authHeader = res._headers.authorization;
+        console.log(authHeader);
+        if (authHeader) {
+            const token = authHeader.split(' ')[1];
+            jwt.verify(token, accessTokenSecret, (err, user) => {
+                if (err) {
+                    return res.sendStatus(403);
+                }
+                req.user = user;
+                next();
+            });
+        } else {
+            res.sendStatus(401);
+        }
+    } else {
+        console.log("Failed to validate token!");
+        req.session.returnTo = req.originalUrl;
+        res.redirect("/login");
+    }
+};
 
 // Router mounting
 app.use("/", authRouter);
@@ -123,10 +160,10 @@ const secured = (req, res, next) => {
 };
 
 app.get("/", (req, res) => {
-    res.render("server", { title: "Home" });
+    res.render("index", { title: "Home" });
 });
 
-app.get("/user", secured, (req, res, next) => {
+app.get("/user", authenticateJWT, (req, res, next) => {
     const { _raw, _json, ...userProfile } = req.user;
     res.render("user", {
         title: "Profile",
@@ -139,7 +176,7 @@ db.sequelize.sync();
 /**
  * Server Activation
  */
-require("./app/routes/tutorial.routes")(app);
+require("./routes/tutorial.routes")(app);
 
 app.listen(port, () => {
     console.log(`Listening to requests on http://localhost:${port}`);
