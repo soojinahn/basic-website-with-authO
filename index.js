@@ -171,6 +171,14 @@ app.get("/user", authenticateJWT, (req, res, next) => {
     });
 });
 
+app.get("/tutorials", authenticateJWT, (req, res, next) => {
+    const { _raw, _json, ...tutorials } = req.tutorials;
+    res.render("user", {
+        title: "Main Page",
+        tutorials: tutorials
+    });
+});
+
 db.sequelize.sync();
 
 /**
