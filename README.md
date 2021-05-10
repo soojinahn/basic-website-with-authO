@@ -8,7 +8,7 @@
 4. Run: node index.js
 5. Log in and enjoy the website!
 
-Screenshots of website:
+### Screenshots of website:
 
 Main Page
 ![mainpage](https://user-images.githubusercontent.com/68924449/117736274-39b88600-b1c5-11eb-9db5-e254fb40af2a.PNG)
