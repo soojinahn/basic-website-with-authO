@@ -1,5 +1,4 @@
-## IS219 Final Project
-### Node.js Rest API with Express, Sequelize, and MySQL
+## Node.js Rest API with Express, Sequelize, and MySQL
 
 ### To run:
 1. Clone the repo
